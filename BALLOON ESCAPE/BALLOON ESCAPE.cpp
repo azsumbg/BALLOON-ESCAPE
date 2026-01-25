@@ -80,7 +80,7 @@ float scale_y{ 0 };
 
 int level = 1;
 int score = 0;
-int distance = 240;
+float distance = 240;
 
 wchar_t current_player[16]{ L"TARLYO" };
 
@@ -580,7 +580,11 @@ LRESULT CALLBACK WinProc(HWND hwnd, UINT ReceivedMsg, WPARAM wParam, LPARAM lPar
 
 	case WM_TIMER:
 		if (pause)break;
-		distance--;
+		if (Balloon)
+		{
+			if (Balloon->dir == dirs::left || Balloon->dir == dirs::up || Balloon->dir == dirs::down)distance -= 0.1f;
+			else if (Balloon->dir == dirs::right) distance += 0.1f;
+		}
 		if (distance <= 0)LevelUp();
 		break;
 
@@ -1388,6 +1392,48 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 		{
 			Draw->DrawBitmap(bmpCrashed, D2D1::RectF(FallingBalloon->start.x, FallingBalloon->start.y,
 				FallingBalloon->end.x, FallingBalloon->end.y));
+		}
+
+		if (midFormat && statBrush)
+		{
+			wchar_t stat_txt[150]{ L"пилот: " };
+			wchar_t add[10]{ L"\0" };
+			int stat_size{ 0 };
+
+			wcscat_s(stat_txt, current_player);
+			
+			wcscat_s(stat_txt, L", ниво: ");
+			wsprintf(add, L"%d", level);
+			wcscat_s(stat_txt, add);
+
+			wcscat_s(stat_txt, L", точки: ");
+			wsprintf(add, L"%d", score);
+			wcscat_s(stat_txt, add);
+
+			for (int i = 0; i < 150; ++i)
+			{
+				if (stat_txt[i] != '\0')++stat_size;
+				else break;
+			}
+
+			Draw->DrawTextW(stat_txt, stat_size, midFormat, D2D1::RectF(10.0f, ground + 3.0f, scr_width, scr_height), statBrush);
+
+			stat_size = 0;
+
+			wcscpy_s(stat_txt, L"остават: ");
+			swprintf_s(add, 10, L"%.2f", distance / 10.0f);
+			wcscat_s(stat_txt, add);
+			wcscat_s(stat_txt, L" км.");
+
+			for (int i = 0; i < 150; ++i)
+			{
+				if (stat_txt[i] != '\0')++stat_size;
+				else break;
+			}
+
+			Draw->DrawTextW(stat_txt, stat_size, midFormat, D2D1::RectF(scr_width - 300.0f, sky + 10.0f,
+				scr_width, scr_height), statBrush);
+
 		}
 		
 		// END DRAW *****************************************************

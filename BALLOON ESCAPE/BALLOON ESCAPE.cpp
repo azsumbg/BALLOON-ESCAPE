@@ -1121,6 +1121,49 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 			}
 		}
 
+		if (!vBirds.empty() && Balloon)
+		{
+			for (std::vector<dll::EVILS*>::iterator ban = vBirds.begin(); ban < vBirds.end(); ++ban)
+			{
+				if (dll::Intersect(Balloon->center, (*ban)->center, Balloon->x_rad, (*ban)->x_rad,
+					Balloon->y_rad, (*ban)->y_rad))
+				{
+					Balloon->lifes -= 15;
+					(*ban)->Release();
+					vBirds.erase(ban);
+					if (Balloon->lifes <= 0)
+					{
+						killed = true;
+						FallingBalloon = dll::PROTON::create(Balloon->center.x, Balloon->center.y, 100.0f, 100.0f);
+						FreeMem(&Balloon);
+					}
+
+					break;
+				}
+			}
+		}
+
+		if (!vGorillas.empty() && Balloon)
+		{
+			for (std::vector<dll::EVILS*>::iterator ban = vGorillas.begin(); ban < vGorillas.end(); ++ban)
+			{
+				if (dll::Intersect(Balloon->center, (*ban)->center, Balloon->x_rad, (*ban)->x_rad,
+					Balloon->y_rad, (*ban)->y_rad))
+				{
+					Balloon->lifes -= 15;
+					(*ban)->Release();
+					vGorillas.erase(ban);
+					if (Balloon->lifes <= 0)
+					{
+						killed = true;
+						FallingBalloon = dll::PROTON::create(Balloon->center.x, Balloon->center.y, 100.0f, 100.0f);
+						FreeMem(&Balloon);
+					}
+
+					break;
+				}
+			}
+		}
 
 		// DRAW THINGS **************************************************
 

@@ -258,7 +258,7 @@ void InitGame()
 
 	level = 1;
 	score = 0;
-	distance = 240;
+	distance = 180.0f;
 	level_skipped = false;
 
 	need_right_field = false;
@@ -309,7 +309,7 @@ void LevelUp()
 
 	++level;
 
-	distance = 240 + 10 * level;
+	distance = 180.0f + 10.0f * (float)(level);
 
 	need_right_field = false;
 	need_left_field = false;
@@ -582,8 +582,8 @@ LRESULT CALLBACK WinProc(HWND hwnd, UINT ReceivedMsg, WPARAM wParam, LPARAM lPar
 		if (pause)break;
 		if (Balloon)
 		{
-			if (Balloon->dir == dirs::left || Balloon->dir == dirs::up || Balloon->dir == dirs::down)distance -= 0.1f;
-			else if (Balloon->dir == dirs::right) distance += 0.1f;
+			if (Balloon->dir == dirs::right || Balloon->dir == dirs::up || Balloon->dir == dirs::down)distance -= 0.1f;
+			else if (Balloon->dir == dirs::left) distance += 0.1f;
 		}
 		if (distance <= 0)LevelUp();
 		break;

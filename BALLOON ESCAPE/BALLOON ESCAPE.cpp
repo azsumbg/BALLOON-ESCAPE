@@ -70,6 +70,7 @@ bool name_set = false;
 bool b1Hglt = false;
 bool b2Hglt = false;
 bool b3Hglt = false;
+bool level_skipped = false;
 
 bool need_right_field = false;
 bool need_left_field = false;
@@ -258,6 +259,7 @@ void InitGame()
 	level = 1;
 	score = 0;
 	distance = 240;
+	level_skipped = false;
 
 	need_right_field = false;
 	need_left_field = false;
@@ -288,6 +290,55 @@ void InitGame()
 	FreeMem(&Balloon);
 	Balloon = dll::BALLOON::create(10.0f, scr_height / 2.0f);
 
+}
+void LevelUp()
+{
+	if (!level_skipped)score += 100 * level;
+	level_skipped = false;
+	
+	Draw->BeginDraw();
+	Draw->DrawBitmap(bmpLevelUp, D2D1::RectF(0, 0, scr_width, scr_height));
+	Draw->EndDraw();
+
+	if (sound)
+	{
+		PlaySound(L".\\res\\snd\\levelup.wav", NULL, SND_SYNC);
+		Sleep(2000);
+	}
+	else Sleep(3500);
+
+	++level;
+
+	distance = 240 + 10 * level;
+
+	need_right_field = false;
+	need_left_field = false;
+
+	if (!vFields.empty())
+		for (int i = 0; i < vFields.size(); ++i)FreeMem(&vFields[i]);
+	vFields.clear();
+	for (float x = -scr_width; x < 2 * scr_width; x += scr_width)
+		vFields.push_back(dll::FIELDS::create(static_cast<nature>(RandIt(3, 4)), x, 50.0f));
+
+	if (!vSkies.empty())
+		for (int i = 0; i < vSkies.size(); ++i)FreeMem(&vSkies[i]);
+	vSkies.clear();
+	vSkies.push_back(dll::FIELDS::create(nature::sun, scr_width - 100.0f, 60.0f));
+
+	if (!vBirds.empty())
+		for (int i = 0; i < vBirds.size(); ++i)FreeMem(&vBirds[i]);
+	vBirds.clear();
+
+	if (!vGorillas.empty())
+		for (int i = 0; i < vGorillas.size(); ++i)FreeMem(&vGorillas[i]);
+	vGorillas.clear();
+
+	if (!vBannanas.empty())
+		for (int i = 0; i < vBannanas.size(); ++i)FreeMem(&vBannanas[i]);
+	vBannanas.clear();
+
+	FreeMem(&Balloon);
+	Balloon = dll::BALLOON::create(10.0f, scr_height / 2.0f);
 }
 
 INT_PTR CALLBACK DlgProc(HWND hwnd, UINT ReceivedMsg, WPARAM wParam, LPARAM lParam)
@@ -478,6 +529,18 @@ LRESULT CALLBACK WinProc(HWND hwnd, UINT ReceivedMsg, WPARAM wParam, LPARAM lPar
 			InitGame();
 			break;
 
+		case mLvl:
+			pause = true;
+			if (sound)mciSendString(L"play .\\res\\snd\\exclamation.wav", NULL, NULL, NULL);
+			if (MessageBox(hwnd, L"Ако прескочиш нивото, ще загубиш бонуса !\n\nНаистина ли прескачаш нивото?",
+				L"Следващо ниво", MB_YESNO | MB_APPLMODAL | MB_ICONQUESTION) == IDNO)
+			{
+				pause = false;
+				break;
+			}
+			level_skipped = true;
+			LevelUp();
+			break;
 
 		case mExit:
 			SendMessage(hwnd, WM_CLOSE, NULL, NULL);
@@ -513,6 +576,12 @@ LRESULT CALLBACK WinProc(HWND hwnd, UINT ReceivedMsg, WPARAM wParam, LPARAM lPar
 			nature_dir = dirs::stop;
 			break;
 		}
+		break;
+
+	case WM_TIMER:
+		if (pause)break;
+		distance--;
+		if (distance <= 0)LevelUp();
 		break;
 
 	default: return DefWindowProc(hwnd, ReceivedMsg, wParam, lParam);

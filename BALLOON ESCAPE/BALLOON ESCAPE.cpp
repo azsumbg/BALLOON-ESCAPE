@@ -134,6 +134,9 @@ std::vector<dll::FIELDS*> vFields;
 std::vector<dll::FIELDS*> vSkies;
 
 dll::BALLOON* Balloon{ nullptr };
+bool killed = false;
+dll::PROTON* FallingBalloon{nullptr};
+
 
 std::vector<dll::EVILS*> vBirds;
 std::vector<dll::EVILS*> vGorillas;
@@ -248,6 +251,9 @@ void InitGame()
 {
 	wcscpy_s(current_player, L"TARLYO");
 	name_set = false;
+
+	killed = false;
+	FreeMem(&FallingBalloon);
 
 	level = 1;
 	score = 0;
@@ -1016,15 +1022,15 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 			}
 		}
 
-		if (vGorillas.size() < 3 + level && RandIt(0, 300) == 66)
+		if (vGorillas.size() < 2 + level && RandIt(0, 350) == 66)
 		{
 			vGorillas.push_back(dll::GORRILLA::create(evils::gorilla, scr_width, ground - 200.0f));
 		}
-		if (!vGorillas.empty())
+		if (!vGorillas.empty() && Balloon)
 		{
 			for (int i = 0; i < vGorillas.size(); ++i)
 			{
-				if (nature_dir != dirs::stop)vGorillas[i]->set_move_dir(nature_dir);
+				if (Balloon->dir != dirs::stop)vGorillas[i]->set_move_dir(dirs::left);
 				else
 				{
 					if (Balloon)
@@ -1041,8 +1047,51 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 				}
 			}
 		}
+		if (!vGorillas.empty() && Balloon)
+		{
+			for (int i = 0; i < vGorillas.size(); ++i)
+			{
+				if (vGorillas[i]->attack())vBannanas.push_back(dll::BANNANA::create(vGorillas[i]->center.x,
+					vGorillas[i]->start.y, Balloon->center.x, Balloon->center.y));
+			}
+		}
 
+		if (!vBannanas.empty())
+		{
+			for (std::vector<dll::BANNANA*>::iterator ban = vBannanas.begin(); ban < vBannanas.end(); ++ban)
+			{
+				if (!(*ban)->move((float)(level)))
+				{
+					(*ban)->Release();
+					vBannanas.erase(ban);
+					break;
+				}
+			}
+		}
 
+		if (!vBannanas.empty() && Balloon)
+		{
+			for (std::vector<dll::BANNANA*>::iterator ban = vBannanas.begin(); ban < vBannanas.end(); ++ban)
+			{
+				if (dll::Intersect(Balloon->center, (*ban)->center, Balloon->x_rad, (*ban)->x_rad,
+					Balloon->y_rad, (*ban)->y_rad))
+				{
+					Balloon->lifes -= 10;
+					(*ban)->Release();
+					vBannanas.erase(ban);
+					if (Balloon->lifes <= 0)
+					{
+						killed = true;
+						FallingBalloon = dll::PROTON::create(Balloon->center.x, Balloon->center.y, 100.0f, 100.0f);
+						FreeMem(&Balloon);
+					}
+
+					break;
+				}
+			}
+		}
+		
+		
 		// DRAW THINGS **************************************************
 
 		Draw->BeginDraw();
@@ -1087,6 +1136,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 		{
 			int aframe = Balloon->get_frame();
 			Draw->DrawBitmap(bmpBalloon[aframe], Resizer(bmpBalloon[aframe], Balloon->start.x, Balloon->start.y));
+			Draw->DrawLine(D2D1::Point2F(Balloon->start.x, Balloon->end.y + 3.0f),
+				D2D1::Point2F(Balloon->start.x + (float)(Balloon)->lifes, Balloon->end.y + 3.0f), statBrush, 5.0f);
 		}
 
 		if (!vSkies.empty())
@@ -1126,10 +1177,29 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 			}
 		}
 
+		if (!vBannanas.empty())
+		{
+			for (int i = 0; i < vBannanas.size(); ++i)
+				Draw->DrawBitmap(bmpBannana, D2D1::RectF(vBannanas[i]->start.x, vBannanas[i]->start.y,
+					vBannanas[i]->end.x, vBannanas[i]->end.y));
+		}
 
+		if (killed)
+		{
+			Draw->DrawBitmap(bmpCrashed, D2D1::RectF(FallingBalloon->start.x, FallingBalloon->start.y,
+				FallingBalloon->end.x, FallingBalloon->end.y));
+		}
+		
 		// END DRAW *****************************************************
 
 		Draw->EndDraw();
+
+		if (killed)
+		{
+			FallingBalloon->start.y++;
+			FallingBalloon->set_edges();
+			if (FallingBalloon->end.y >= ground)GameOver();
+		}
 	}
 
 	ClearResources();

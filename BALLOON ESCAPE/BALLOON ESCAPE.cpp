@@ -1091,7 +1091,37 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 			}
 		}
 		
-		
+		if (vBirds.size() < 3 + level && RandIt(0, 300) == 88)
+		{
+			switch (RandIt(0, 2))
+			{
+			case 0:
+				vBirds.push_back(dll::BIRD1::create(evils::bird1, scr_width, RandIt(sky, ground - 150.0f)));
+				break;
+
+			case 1:
+				vBirds.push_back(dll::BIRD2::create(evils::bird2, scr_width, RandIt(sky, ground - 150.0f)));
+				break;
+
+			case 2:
+				vBirds.push_back(dll::BIRD3::create(evils::bird3, scr_width, RandIt(sky, ground - 150.0f)));
+				break;
+			}
+		}
+		if (!vBirds.empty())
+		{
+			for (std::vector<dll::EVILS*>::iterator bird = vBirds.begin(); bird < vBirds.end(); ++bird)
+			{
+				if (!(*bird)->move((float)(level)))
+				{
+					(*bird)->Release();
+					vBirds.erase(bird);
+					break;
+				}
+			}
+		}
+
+
 		// DRAW THINGS **************************************************
 
 		Draw->BeginDraw();
@@ -1182,6 +1212,64 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 			for (int i = 0; i < vBannanas.size(); ++i)
 				Draw->DrawBitmap(bmpBannana, D2D1::RectF(vBannanas[i]->start.x, vBannanas[i]->start.y,
 					vBannanas[i]->end.x, vBannanas[i]->end.y));
+		}
+
+		if (!vBirds.empty() && Balloon)
+		{
+			for (int i = 0; i < vBirds.size(); ++i)
+			{
+				int aframe = vBirds[i]->get_frame();
+				dirs cur_dir = vBirds[i]->get_move_dir();
+
+				switch (vBirds[i]->get_type())
+				{
+				case evils::bird1:
+					if (cur_dir == dirs::up_left || cur_dir == dirs::left || cur_dir == dirs::down_left)
+						Draw->DrawBitmap(bmpBird1L[aframe], Resizer(bmpBird1L[aframe], vBirds[i]->start.x, vBirds[i]->start.y));
+					else if (cur_dir == dirs::up_right || cur_dir == dirs::right || cur_dir == dirs::down_right)
+						Draw->DrawBitmap(bmpBird1R[aframe], Resizer(bmpBird1R[aframe], vBirds[i]->start.x, vBirds[i]->start.y));
+					else
+					{
+						if (Balloon->center.x <= vBirds[i]->center.x)
+							Draw->DrawBitmap(bmpBird1L[aframe], Resizer(bmpBird1L[aframe], vBirds[i]->start.x, 
+								vBirds[i]->start.y));
+						else Draw->DrawBitmap(bmpBird1R[aframe], Resizer(bmpBird1R[aframe], vBirds[i]->start.x, 
+							vBirds[i]->start.y));
+					}
+					break;
+
+				case evils::bird2:
+					if (cur_dir == dirs::up_left || cur_dir == dirs::left || cur_dir == dirs::down_left)
+						Draw->DrawBitmap(bmpBird2L[aframe], Resizer(bmpBird2L[aframe], vBirds[i]->start.x, vBirds[i]->start.y));
+					else if (cur_dir == dirs::up_right || cur_dir == dirs::right || cur_dir == dirs::down_right)
+						Draw->DrawBitmap(bmpBird2R[aframe], Resizer(bmpBird2R[aframe], vBirds[i]->start.x, vBirds[i]->start.y));
+					else
+					{
+						if (Balloon->center.x <= vBirds[i]->center.x)
+							Draw->DrawBitmap(bmpBird2L[aframe], Resizer(bmpBird2L[aframe], vBirds[i]->start.x,
+								vBirds[i]->start.y));
+						else Draw->DrawBitmap(bmpBird2R[aframe], Resizer(bmpBird2R[aframe], vBirds[i]->start.x,
+							vBirds[i]->start.y));
+					}
+					break;
+
+				case evils::bird3:
+					if (cur_dir == dirs::up_left || cur_dir == dirs::left || cur_dir == dirs::down_left)
+						Draw->DrawBitmap(bmpBird3L[aframe], Resizer(bmpBird3L[aframe], vBirds[i]->start.x, vBirds[i]->start.y));
+					else if (cur_dir == dirs::up_right || cur_dir == dirs::right || cur_dir == dirs::down_right)
+						Draw->DrawBitmap(bmpBird3R[aframe], Resizer(bmpBird3R[aframe], vBirds[i]->start.x, vBirds[i]->start.y));
+					else
+					{
+						if (Balloon->center.x <= vBirds[i]->center.x)
+							Draw->DrawBitmap(bmpBird3L[aframe], Resizer(bmpBird3L[aframe], vBirds[i]->start.x,
+								vBirds[i]->start.y));
+						else Draw->DrawBitmap(bmpBird3R[aframe], Resizer(bmpBird3R[aframe], vBirds[i]->start.x,
+							vBirds[i]->start.y));
+					}
+					break;
+
+				}
+			}
 		}
 
 		if (killed)

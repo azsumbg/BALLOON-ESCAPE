@@ -135,7 +135,10 @@ std::vector<dll::FIELDS*> vSkies;
 
 dll::BALLOON* Balloon{ nullptr };
 
+std::vector<dll::EVILS*> vBirds;
+std::vector<dll::EVILS*> vGorillas;
 
+std::vector<dll::BANNANA*> vBannanas;
 
 /////////////////////////////////////
 
@@ -263,6 +266,18 @@ void InitGame()
 		for (int i = 0; i < vSkies.size(); ++i)FreeMem(&vSkies[i]);
 	vSkies.clear();
 	vSkies.push_back(dll::FIELDS::create(nature::sun, scr_width - 100.0f, 60.0f));
+
+	if (!vBirds.empty())
+		for (int i = 0; i < vBirds.size(); ++i)FreeMem(&vBirds[i]);
+	vBirds.clear();
+
+	if (!vGorillas.empty())
+		for (int i = 0; i < vGorillas.size(); ++i)FreeMem(&vGorillas[i]);
+	vGorillas.clear();
+
+	if (!vBannanas.empty())
+		for (int i = 0; i < vBannanas.size(); ++i)FreeMem(&vBannanas[i]);
+	vBannanas.clear();
 
 	FreeMem(&Balloon);
 	Balloon = dll::BALLOON::create(10.0f, scr_height / 2.0f);
@@ -1001,7 +1016,31 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 			}
 		}
 
-
+		if (vGorillas.size() < 3 + level && RandIt(0, 300) == 66)
+		{
+			vGorillas.push_back(dll::GORRILLA::create(evils::gorilla, scr_width, ground - 200.0f));
+		}
+		if (!vGorillas.empty())
+		{
+			for (int i = 0; i < vGorillas.size(); ++i)
+			{
+				if (nature_dir != dirs::stop)vGorillas[i]->set_move_dir(nature_dir);
+				else
+				{
+					if (Balloon)
+					{
+						if (Balloon->start.x <= vGorillas[i]->start.x)vGorillas[i]->set_move_dir(dirs::left);
+						else vGorillas[i]->set_move_dir(dirs::right);
+					}
+				}
+				if (!vGorillas[i]->move((float)(level)))
+				{
+					FreeMem(&vGorillas[i]);
+					vGorillas.erase(vGorillas.begin() + i);
+					break;
+				}
+			}
+		}
 
 
 		// DRAW THINGS **************************************************
@@ -1074,7 +1113,18 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 			}
 		}
 
-
+		if (!vGorillas.empty())
+		{
+			for (int i = 0; i < vGorillas.size(); ++i)
+			{
+				int aframe = vGorillas[i]->get_frame();
+				if (vGorillas[i]->get_move_dir() == dirs::left)
+					Draw->DrawBitmap(bmpGorrillaL[aframe], Resizer(bmpGorrillaL[aframe], vGorillas[i]->start.x,
+						vGorillas[i]->start.y));
+				else Draw->DrawBitmap(bmpGorrillaR[aframe], Resizer(bmpGorrillaR[aframe], vGorillas[i]->start.x,
+					vGorillas[i]->start.y));
+			}
+		}
 
 
 		// END DRAW *****************************************************

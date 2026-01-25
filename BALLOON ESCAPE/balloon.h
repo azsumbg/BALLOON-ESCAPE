@@ -116,6 +116,7 @@ namespace dll
 
 	public:
 		dirs dir = dirs::stop;
+		int lifes = 100;
 
 		void move(float gear);
 

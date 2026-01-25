@@ -3,5 +3,5 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="BALLOON ESCAPE/BALLOON ESCAPE.vcxproj" />
+  <Project Path="BALLOON ESCAPE/BALLOON ESCAPE.vcxproj" Id="72a6efd7-bcb0-4301-bf00-e0ee8c653f7c" />
 </Solution>

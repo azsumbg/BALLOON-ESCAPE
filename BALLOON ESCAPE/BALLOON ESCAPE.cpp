@@ -17,7 +17,7 @@
 #pragma comment(lib, "fcheck.lib")
 #pragma comment(lib, "d2bmploader.lib")
 #pragma comment(lib, "gifresizer.lib")
-#pragma comment(lib, "ballon.lib")
+#pragma comment(lib, "balloon.lib")
 
 constexpr wchar_t bWinClassName[]{ L"Balloons" };
 constexpr char tmp_file[]{ ".\\res\\data\\temp.dat" };
@@ -56,11 +56,11 @@ UINT bTimer{ 0 };
 
 D2D1_RECT_F b1Rect(40.0f, 0, scr_width / 3.0f - 50.0f, 50.0f);
 D2D1_RECT_F b2Rect(scr_width / 3.0f + 40.0f, 0, scr_width * 2 / 3.0f - 50.0f, 50.0f);
-D2D1_RECT_F b3Rect(scr_width * 2 / 3.0f + 40.0f, 0, scr_width / 3.0f - 50.0f, 50.0f);
+D2D1_RECT_F b3Rect(scr_width * 2 / 3.0f + 40.0f, 0, scr_width - 50.0f, 50.0f);
 
 D2D1_RECT_F b1TxtRect(70.0f, 5.0f, scr_width / 3.0f - 50.0f, 50.0f);
 D2D1_RECT_F b2TxtRect(scr_width / 3.0f + 70.0f, 5.0f, scr_width * 2 / 3.0f - 50.0f, 50.0f);
-D2D1_RECT_F b3TxtRect(scr_width * 2 / 3.0f + 70.0f, 5.0f, scr_width / 3.0f - 50.0f, 50.0f);
+D2D1_RECT_F b3TxtRect(scr_width * 2 / 3.0f + 70.0f, 5.0f, scr_width  - 50.0f, 50.0f);
 
 bool pause = false;
 bool in_client = true;
@@ -350,7 +350,7 @@ LRESULT CALLBACK WinProc(HWND hwnd, UINT ReceivedMsg, WPARAM wParam, LPARAM lPar
 				pause = false;
 			}
 
-			if (cur_pos.x * scale_y <= 50)
+			if (cur_pos.y * scale_y <= 50)
 			{
 				if (cur_pos.x * scale_x >= b1Rect.left && cur_pos.x * scale_x <= b1Rect.right)
 				{
@@ -852,7 +852,7 @@ void CreateResources()
 
 		PlaySound(L".\\res\\snd\\intro.wav", NULL, SND_ASYNC);
 
-		for (int i = 0; i < 100; ++i)
+		for (int i = 0; i < 500; ++i)
 		{
 			Draw->BeginDraw();
 			Draw->DrawBitmap(bmpIntro[GetIntroFrame()], D2D1::RectF(0, 0, scr_width, scr_height));
@@ -871,6 +871,32 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 
 	CreateResources();
 
+	while (bMsg.message != WM_QUIT)
+	{
+		if ((bRet = PeekMessage(&bMsg, nullptr, NULL, NULL, PM_REMOVE)) != 0)
+		{
+			if (bRet == -1)ErrExit(eMsg);
+			TranslateMessage(&bMsg);
+			DispatchMessage(&bMsg);
+		}
+
+		if (pause)
+		{
+			if (show_help)continue;
+
+			if (hgltBrush && bigFormat)
+			{
+				Draw->BeginDraw();
+				Draw->DrawBitmap(bmpIntro[GetIntroFrame()], D2D1::RectF(0, 0, scr_width, scr_height));
+				Draw->DrawTextW(L"ПАУЗА", 6, bigFormat, D2D1::RectF(scr_width / 2.0f - 100.0f, scr_height / 2.0f - 50.0f,
+					scr_width, scr_height), hgltBrush);
+				Draw->EndDraw();
+			}
+
+			continue;
+		}
+
+		/////////////////////////////////////////////////////////////////
 
 
 
@@ -881,6 +907,58 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 
 
 
+
+
+
+
+
+		// DRAW THINGS **************************************************
+
+		Draw->BeginDraw();
+
+		if (nrmFormat && txtBrush && hgltBrush && txtBrush && statBrush && b1BckgBrush && b2BckgBrush && b3BckgBrush)
+		{
+			Draw->FillRectangle(D2D1::RectF(0, 0, scr_width, 50.0f), statBrush);
+			Draw->FillRoundedRectangle(D2D1::RoundedRect(b1Rect, 10.0f, 20.0f), b1BckgBrush);
+			Draw->FillRoundedRectangle(D2D1::RoundedRect(b2Rect, 10.0f, 20.0f), b2BckgBrush);
+			Draw->FillRoundedRectangle(D2D1::RoundedRect(b3Rect, 10.0f, 20.0f), b3BckgBrush);
+
+			if (name_set)Draw->DrawTextW(L"ИМЕ НА ПИЛОТ", 13, nrmFormat, b1TxtRect, inactBrush);
+			else
+			{
+				if (!b1Hglt)Draw->DrawTextW(L"ИМЕ НА ПИЛОТ", 13, nrmFormat, b1TxtRect, txtBrush);
+				else Draw->DrawTextW(L"ИМЕ НА ПИЛОТ", 13, nrmFormat, b1TxtRect, hgltBrush);
+			}
+
+			if (!b2Hglt)Draw->DrawTextW(L"ЗВУЦИ ON / OFF", 15, nrmFormat, b2TxtRect, txtBrush);
+			else Draw->DrawTextW(L"ЗВУЦИ ON / OFF", 15, nrmFormat, b2TxtRect, hgltBrush);
+
+			if (!b3Hglt)Draw->DrawTextW(L"ПОМОЩ ЗА ИГРАТА", 16, nrmFormat, b3TxtRect, txtBrush);
+			else Draw->DrawTextW(L"ПОМОЩ ЗА ИГРАТА", 16, nrmFormat, b3TxtRect, hgltBrush);
+		}
+
+		if (!vFields.empty())
+		{
+			for (int i = 0; i < vFields.size(); ++i)
+			{
+				if (vFields[i]->get_type() == nature::field1)
+					Draw->DrawBitmap(bmpField1, D2D1::RectF(vFields[i]->start.x, vFields[i]->start.y,
+						vFields[i]->end.x, vFields[i]->end.y));
+				else
+					Draw->DrawBitmap(bmpField2, D2D1::RectF(vFields[i]->start.x, vFields[i]->start.y,
+						vFields[i]->end.x, vFields[i]->end.y));
+			}
+		}
+
+		/////////////////////////////////////
+
+
+
+
+		// END DRAW *****************************************************
+
+		Draw->EndDraw();
+	}
 
 	ClearResources();
 	std::remove(tmp_file);

@@ -131,8 +131,10 @@ ID2D1Bitmap* bmpGorrillaR[7]{ nullptr };
 dll::RANDIT RandIt{};
 
 std::vector<dll::FIELDS*> vFields;
+std::vector<dll::FIELDS*> vSkies;
 
 dll::BALLOON* Balloon{ nullptr };
+
 
 
 /////////////////////////////////////
@@ -256,6 +258,11 @@ void InitGame()
 	vFields.clear();
 	for (float x = -scr_width; x < 2 * scr_width; x += scr_width)
 		vFields.push_back(dll::FIELDS::create(static_cast<nature>(RandIt(3, 4)), x, 50.0f));
+
+	if (!vSkies.empty())
+		for (int i = 0; i < vSkies.size(); ++i)FreeMem(&vSkies[i]);
+	vSkies.clear();
+	vSkies.push_back(dll::FIELDS::create(nature::sun, scr_width - 100.0f, 60.0f));
 
 	FreeMem(&Balloon);
 	Balloon = dll::BALLOON::create(10.0f, scr_height / 2.0f);
@@ -975,8 +982,24 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 			need_left_field = false;
 		}
 
-
-
+		if (vSkies.size() < 5 && RandIt(0, 200) == 66)
+		{
+			vSkies.push_back(dll::FIELDS::create(static_cast<nature>(RandIt(0, 1)), scr_width,
+				50.0f + (float)(RandIt(0, 30))));
+		}
+		if (!vSkies.empty())
+		{
+			for (int i = 0; i < vSkies.size(); ++i)
+			{
+				vSkies[i]->dir = nature_dir;
+				if (!vSkies[i]->move((float)(level)))
+				{
+					FreeMem(&vSkies[i]);
+					vSkies.erase(vSkies.begin() + i);
+					break;
+				}
+			}
+		}
 
 
 
@@ -1027,6 +1050,29 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 			Draw->DrawBitmap(bmpBalloon[aframe], Resizer(bmpBalloon[aframe], Balloon->start.x, Balloon->start.y));
 		}
 
+		if (!vSkies.empty())
+		{
+			for (int i = 0; i < vSkies.size(); ++i)
+			{
+				switch (vSkies[i]->get_type())
+				{
+				case nature::sun:
+					Draw->DrawBitmap(bmpSun, D2D1::RectF(vSkies[i]->start.x, vSkies[i]->start.y,
+						vSkies[i]->end.x, vSkies[i]->end.y));
+					break;
+
+				case nature::cloud1:
+					Draw->DrawBitmap(bmpCloud1, D2D1::RectF(vSkies[i]->start.x, vSkies[i]->start.y,
+						vSkies[i]->end.x, vSkies[i]->end.y));
+					break;
+
+				case nature::cloud2:
+					Draw->DrawBitmap(bmpCloud1, D2D1::RectF(vSkies[i]->start.x, vSkies[i]->start.y,
+						vSkies[i]->end.x, vSkies[i]->end.y));
+					break;
+				}
+			}
+		}
 
 
 

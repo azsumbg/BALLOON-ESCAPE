@@ -71,6 +71,9 @@ bool b1Hglt = false;
 bool b2Hglt = false;
 bool b3Hglt = false;
 
+bool need_right_field = false;
+bool need_left_field = false;
+
 float scale_x{ 0 };
 float scale_y{ 0 };
 
@@ -129,7 +132,7 @@ dll::RANDIT RandIt{};
 
 std::vector<dll::FIELDS*> vFields;
 
-
+dll::BALLOON* Balloon{ nullptr };
 
 
 /////////////////////////////////////
@@ -245,11 +248,17 @@ void InitGame()
 	score = 0;
 	distance = 240;
 
+	need_right_field = false;
+	need_left_field = false;
+
 	if (!vFields.empty())
 		for (int i = 0; i < vFields.size(); ++i)FreeMem(&vFields[i]);
 	vFields.clear();
 	for (float x = -scr_width; x < 2 * scr_width; x += scr_width)
 		vFields.push_back(dll::FIELDS::create(static_cast<nature>(RandIt(3, 4)), x, 50.0f));
+
+	FreeMem(&Balloon);
+	Balloon = dll::BALLOON::create(10.0f, scr_height / 2.0f);
 
 }
 
@@ -449,7 +458,34 @@ LRESULT CALLBACK WinProc(HWND hwnd, UINT ReceivedMsg, WPARAM wParam, LPARAM lPar
 		}
 		break;
 
+	case WM_KEYDOWN:
+		if (pause || !Balloon)break;
+		switch (LOWORD(wParam))
+		{
+		case VK_LEFT:
+			Balloon->dir = dirs::left;
+			nature_dir = dirs::right;
+			break;
 
+		case VK_RIGHT:
+			Balloon->dir = dirs::right;
+			nature_dir = dirs::left;
+			break;
+
+		case VK_UP:
+			Balloon->dir = dirs::up;
+			break;
+
+		case VK_DOWN:
+			Balloon->dir = dirs::down;
+			break;
+
+		case VK_SPACE:
+			Balloon->dir = dirs::stop;
+			nature_dir = dirs::stop;
+			break;
+		}
+		break;
 
 	default: return DefWindowProc(hwnd, ReceivedMsg, wParam, lParam);
 	}
@@ -898,13 +934,46 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 
 		/////////////////////////////////////////////////////////////////
 
+		if (Balloon)Balloon->move((float)(level));
 
+		if (!vFields.empty())
+		{
+			for (int i = 0; i < vFields.size(); ++i)
+			{
+				vFields[i]->dir = nature_dir;
+				if (!vFields[i]->move((float)(level)))
+				{
+					if (vFields[i]->end.x <= 0 - scr_width)
+					{
+						FreeMem(&vFields[i]);
+						vFields.erase(vFields.begin() + i);
+						need_right_field = true;
+						break;
+					}
 
+					if (vFields[i]->start.x >= 2.0f * scr_width)
+					{
+						FreeMem(&vFields[i]);
+						vFields.erase(vFields.begin() + i);
+						need_left_field = true;
+						break;
+					}
+				}
+			}
+		}
 
-
-
-
-
+		if (need_right_field)
+		{
+			vFields.push_back(dll::FIELDS::create(static_cast<nature>(RandIt(3, 4)),
+				vFields.back()->end.x, 50.0f));
+			need_right_field = false;
+		}
+		if (need_left_field)
+		{
+			vFields.insert(vFields.begin(), dll::FIELDS::create(static_cast<nature>(RandIt(3, 4)),
+				vFields.front()->start.x - scr_width, 50.0f));
+			need_left_field = false;
+		}
 
 
 
@@ -951,6 +1020,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 		}
 
 		/////////////////////////////////////
+
+		if (Balloon)
+		{
+			int aframe = Balloon->get_frame();
+			Draw->DrawBitmap(bmpBalloon[aframe], Resizer(bmpBalloon[aframe], Balloon->start.x, Balloon->start.y));
+		}
+
 
 
 

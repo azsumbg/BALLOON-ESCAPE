@@ -1159,6 +1159,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 
 		if (vGorillas.size() < 2 + level && RandIt(0, 350) == 66)
 		{
+			if (sound)mciSendString(L"play .\\res\\snd\\gorilla.wav", NULL, NULL, NULL);
 			vGorillas.push_back(dll::GORRILLA::create(evils::gorilla, scr_width, ground - 200.0f));
 		}
 		if (!vGorillas.empty() && Balloon)
@@ -1211,6 +1212,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 				if (dll::Intersect(Balloon->center, (*ban)->center, Balloon->x_rad, (*ban)->x_rad,
 					Balloon->y_rad, (*ban)->y_rad))
 				{
+					if (sound)mciSendString(L"play .\\res\\snd\\splash.wav", NULL, NULL, NULL);
 					Balloon->lifes -= 10;
 					(*ban)->Release();
 					vBannanas.erase(ban);
@@ -1228,6 +1230,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 		
 		if (vBirds.size() < 3 + level && RandIt(0, 300) == 88)
 		{
+			if (sound)mciSendString(L"play .\\res\\snd\\bird.wav", NULL, NULL, NULL);
 			switch (RandIt(0, 2))
 			{
 			case 0:
@@ -1263,6 +1266,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 				if (dll::Intersect(Balloon->center, (*ban)->center, Balloon->x_rad, (*ban)->x_rad,
 					Balloon->y_rad, (*ban)->y_rad))
 				{
+					if (sound)mciSendString(L"play .\\res\\snd\\smash.wav", NULL, NULL, NULL);
 					Balloon->lifes -= 15;
 					(*ban)->Release();
 					vBirds.erase(ban);
@@ -1285,6 +1289,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 				if (dll::Intersect(Balloon->center, (*ban)->center, Balloon->x_rad, (*ban)->x_rad,
 					Balloon->y_rad, (*ban)->y_rad))
 				{
+					if (sound)mciSendString(L"play .\\res\\snd\\smash.wav", NULL, NULL, NULL);
 					Balloon->lifes -= 15;
 					(*ban)->Release();
 					vGorillas.erase(ban);

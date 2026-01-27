@@ -138,7 +138,6 @@ dll::BALLOON* Balloon{ nullptr };
 bool killed = false;
 dll::PROTON* FallingBalloon{nullptr};
 
-
 std::vector<dll::EVILS*> vBirds;
 std::vector<dll::EVILS*> vGorillas;
 
@@ -238,11 +237,69 @@ void ErrExit(int what)
 	std::remove(tmp_file);
 	exit(1);
 }
+BOOL CheckRecord()
+{
+	if (score < 1)return no_record;
+	int result{ 0 };
 
+	CheckFile(record_file, &result);
+	if (result == FILE_NOT_EXIST)
+	{
+		std::wofstream rec(record_file);
+		rec << score << std::endl;
+		for (int i = 0; i < 16; ++i)rec << static_cast<int>(current_player[i]) << std::endl;
+		rec.close();
+		return first_record;
+	}
+	else
+	{
+		std::wifstream check(record_file);
+		check >> result;
+		check.close();
+	}
+
+	if (result < score)
+	{
+		std::wofstream rec(record_file);
+		rec << score << std::endl;
+		for (int i = 0; i < 16; ++i)rec << static_cast<int>(current_player[i]) << std::endl;
+		rec.close();
+		return record;
+	}
+
+	return no_record;
+}
 void GameOver()
 {
 	PlaySound(NULL, NULL, NULL);
 	KillTimer(bHwnd, bTimer);
+
+	switch (CheckRecord())
+	{
+	case no_record:
+		Draw->BeginDraw();
+		Draw->DrawBitmap(bmpNoRecord, D2D1::RectF(0, 0, scr_width, scr_height));
+		Draw->EndDraw();
+		if (sound)PlaySound(L".\\res\\snd\\loose.wav", NULL, SND_SYNC);
+		else Sleep(2500);
+		break;
+
+	case first_record:
+		Draw->BeginDraw();
+		Draw->DrawBitmap(bmpFirstRecord, D2D1::RectF(0, 0, scr_width, scr_height));
+		Draw->EndDraw();
+		if (sound)PlaySound(L".\\res\\snd\\record.wav", NULL, SND_SYNC);
+		else Sleep(2500);
+		break;
+
+	case record:
+		Draw->BeginDraw();
+		Draw->DrawBitmap(bmpRecord, D2D1::RectF(0, 0, scr_width, scr_height));
+		Draw->EndDraw();
+		if (sound)PlaySound(L".\\res\\snd\\record.wav", NULL, SND_SYNC);
+		else Sleep(2500);
+		break;
+	}
 
 
 	bMsg.message = WM_QUIT;
@@ -258,7 +315,7 @@ void InitGame()
 
 	level = 1;
 	score = 0;
-	distance = 180.0f;
+	distance = 80.0f;
 	level_skipped = false;
 
 	need_right_field = false;
@@ -309,7 +366,7 @@ void LevelUp()
 
 	++level;
 
-	distance = 180.0f + 10.0f * (float)(level);
+	distance = 80.0f + 10.0f * (float)(level);
 
 	need_right_field = false;
 	need_left_field = false;
@@ -582,8 +639,13 @@ LRESULT CALLBACK WinProc(HWND hwnd, UINT ReceivedMsg, WPARAM wParam, LPARAM lPar
 		if (pause)break;
 		if (Balloon)
 		{
-			if (Balloon->dir == dirs::right || Balloon->dir == dirs::up || Balloon->dir == dirs::down)distance -= 0.1f;
-			else if (Balloon->dir == dirs::left) distance += 0.1f;
+			if (Balloon->dir == dirs::left && Balloon->start.x <= scr_width / 2.0f)distance += 0.1f;
+			else if (Balloon->dir == dirs::right || Balloon->dir == dirs::up || Balloon->dir == dirs::down)
+			{
+				if (Balloon->start.x >= scr_width / 2.0f)distance -= 0.2f;
+				else distance -= 0.1f;
+			}
+			if (Balloon->lifes + 5 <= 100)Balloon->lifes += 5;
 		}
 		if (distance <= 0)LevelUp();
 		break;

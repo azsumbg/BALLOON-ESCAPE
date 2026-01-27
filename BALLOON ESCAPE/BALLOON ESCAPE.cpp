@@ -635,6 +635,40 @@ LRESULT CALLBACK WinProc(HWND hwnd, UINT ReceivedMsg, WPARAM wParam, LPARAM lPar
 		}
 		break;
 
+	case WM_LBUTTONDOWN:
+		if (HIWORD(lParam) * scale_y <= 50)
+		{
+			if (LOWORD(lParam) * scale_x >= b1Rect.left && LOWORD(lParam) * scale_x <= b1Rect.right)
+			{
+				if (name_set)
+				{
+					if (sound)mciSendString(L"play .\\res\\snd\\negative.wav", NULL, NULL, NULL);
+					break;
+				}
+				else if (sound)mciSendString(L"play .\\res\\snd\\select.wav", NULL, NULL, NULL);
+				if (DialogBox(bIns, MAKEINTRESOURCE(IDD_PLAYER), hwnd, &DlgProc) == IDOK)name_set = true;
+				break;
+			}
+			if (LOWORD(lParam) * scale_x >= b2Rect.left && LOWORD(lParam) * scale_x <= b2Rect.right)
+			{
+				mciSendString(L"play .\\res\\snd\\select.wav", NULL, NULL, NULL);
+				if (sound)
+				{
+					sound = false;
+					PlaySound(NULL, NULL, NULL);
+					break;
+				}
+				else
+				{
+					sound = true;
+					PlaySound(sound_file, NULL, SND_ASYNC | SND_LOOP);
+					break;
+				}
+			}
+
+		}
+		break;
+
 	case WM_TIMER:
 		if (pause)break;
 		if (Balloon)
@@ -1069,6 +1103,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 	if (!bIns)ErrExit(eClass);
 
 	CreateResources();
+
+	PlaySound(sound_file, NULL, SND_ASYNC | SND_LOOP);
 
 	while (bMsg.message != WM_QUIT)
 	{

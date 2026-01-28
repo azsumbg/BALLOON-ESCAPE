@@ -450,6 +450,65 @@ void LevelUp()
 	FreeMem(&Balloon);
 	Balloon = dll::BALLOON::create(10.0f, scr_height / 2.0f);
 }
+void SaveGame()
+{
+	int result{ 0 };
+	CheckFile(save_file, &result);
+	if (result == FILE_EXIST)
+	{
+		if (sound)mciSendString(L"play .\\res\\snd\\exclamation.wav", NULL, NULL, NULL);
+		if (MessageBox(bHwnd, L"Има предишна записана игра, която ще загубиш !\n\nНаистина ли я презаписваш ?",
+			L"Презапис", MB_YESNO | MB_APPLMODAL | MB_ICONQUESTION) == IDNO)return;
+	}
+
+	result = 0;
+
+	std::wofstream save(save_file);
+
+	save << killed << std::endl;
+	save << level << std::endl;
+	save << score << std::endl;
+	save << distance << std::endl;
+	save << level_skipped << std::endl;
+
+	for (int i = 0; i < 16; ++i)save << static_cast<int>(current_player[i]) << std::endl;
+	save << name_set << std::endl;
+
+	save << Balloon->start.x << std::endl;
+	save << Balloon->start.y << std::endl;
+
+	save << vGorillas.size() << std::endl;
+	if (vGorillas.size() > 0)
+	{
+		for (int i = 0; i < vGorillas.size(); ++i)
+		{
+			save << vGorillas[i]->start.x << std::endl;
+			save << vGorillas[i]->start.y << std::endl;
+		}
+	}
+
+	save << vBirds.size() << std::endl;
+	if (vBirds.size() > 0)
+	{
+		for (int i = 0; i < vBirds.size(); ++i)
+		{
+			save << static_cast<int>(vBirds[i]->get_type()) << std::endl;
+			save << vBirds[i]->start.x << std::endl;
+			save << vBirds[i]->start.y << std::endl;
+		}
+	}
+
+	save.close();
+
+	if (sound)mciSendString(L"play .\\res\\snd\\save.wav", NULL, NULL, NULL);
+
+	MessageBox(bHwnd, L"Играта е запазена !", L"Запис !", MB_OK | MB_APPLMODAL | MB_ICONINFORMATION);
+}
+void LoadGame()
+{
+
+}
+
 
 INT_PTR CALLBACK DlgProc(HWND hwnd, UINT ReceivedMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -656,6 +715,17 @@ LRESULT CALLBACK WinProc(HWND hwnd, UINT ReceivedMsg, WPARAM wParam, LPARAM lPar
 			SendMessage(hwnd, WM_CLOSE, NULL, NULL);
 			break;
 
+		case mSave:
+			pause = true;
+			SaveGame();
+			pause = false;
+			break;
+
+		case mLoad:
+			pause = true;
+			LoadGame();
+			pause = false;
+			break;
 
 		case mHoF:
 			pause = true;
@@ -736,17 +806,18 @@ LRESULT CALLBACK WinProc(HWND hwnd, UINT ReceivedMsg, WPARAM wParam, LPARAM lPar
 			{
 				distance += 0.1f;
 				score -= 10;
+				if (score < 0)score = 0;
 			}
 			else if (Balloon->dir == dirs::right || Balloon->dir == dirs::up || Balloon->dir == dirs::down)
 			{
 				if (Balloon->start.x >= scr_width / 2.0f)
 				{
 					distance -= 0.2f;
-					score += 20;
+					score += 2;
 				}
 				else
 				{
-					score += 10;
+					score += 1;
 					distance -= 0.1f;
 				}
 			}

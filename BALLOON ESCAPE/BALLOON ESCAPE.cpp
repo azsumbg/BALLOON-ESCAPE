@@ -305,6 +305,59 @@ void GameOver()
 	bMsg.message = WM_QUIT;
 	bMsg.wParam = 0;
 }
+void ShowRecord()
+{
+	int result{ 0 };
+	CheckFile(record_file, &result);
+	if (result == FILE_NOT_EXIST)
+	{
+		if (sound)mciSendString(L"play .\\res\\snd\\negative.wav", NULL, NULL, NULL);
+		MessageBox(bHwnd, L"Все още няма рекорд на играта !\n\nПостарай се повече !", L"Липсва файл",
+			MB_OK | MB_APPLMODAL | MB_ICONEXCLAMATION);
+		return;
+	}
+
+	wchar_t rec_txt[100]{ L"НАЙ-ДОБЪР КАПИТАН: " };
+	wchar_t saved_player[16]{ L"\0" };
+	wchar_t add[5]{ L"\0" };
+
+	std::wifstream rec{ record_file };
+
+	rec >> result;
+	swprintf_s(add, 5, L"%d", result);
+	
+	result = 0;
+
+	for (int i = 0; i < 16; ++i)
+	{
+		int letter = 0;
+		rec >> letter;
+
+		saved_player[i] = static_cast<wchar_t>(letter);
+	}
+	rec.close();
+
+	wcscat_s(rec_txt, saved_player);
+	wcscat_s(rec_txt, L"\n\nСВЕТОВЕН РЕКОРД: ");
+	wcscat_s(rec_txt, add);
+
+	for (int i = 0; i < 100; ++i)
+	{
+		if (rec_txt[i] != '\0')++result;
+		else break;
+	}
+
+	if (sound)mciSendString(L"play .\\res\\snd\\showrec.wav", NULL, NULL, NULL);
+
+	if (bigFormat && hgltBrush)
+	{
+		Draw->BeginDraw();
+		Draw->Clear(D2D1::ColorF(D2D1::ColorF::AliceBlue));
+		Draw->DrawTextW(rec_txt, result, bigFormat, D2D1::RectF(10.0f, 80.0f, scr_width, scr_height), hgltBrush);
+		Draw->EndDraw();
+	}
+	Sleep(4000);
+}
 void InitGame()
 {
 	wcscpy_s(current_player, L"TARLYO");
@@ -603,6 +656,12 @@ LRESULT CALLBACK WinProc(HWND hwnd, UINT ReceivedMsg, WPARAM wParam, LPARAM lPar
 			SendMessage(hwnd, WM_CLOSE, NULL, NULL);
 			break;
 
+
+		case mHoF:
+			pause = true;
+			ShowRecord();
+			pause = false;
+			break;
 		}
 		break;
 
@@ -673,11 +732,23 @@ LRESULT CALLBACK WinProc(HWND hwnd, UINT ReceivedMsg, WPARAM wParam, LPARAM lPar
 		if (pause)break;
 		if (Balloon)
 		{
-			if (Balloon->dir == dirs::left && Balloon->start.x <= scr_width / 2.0f)distance += 0.1f;
+			if (Balloon->dir == dirs::left && Balloon->start.x <= scr_width / 2.0f)
+			{
+				distance += 0.1f;
+				score -= 10;
+			}
 			else if (Balloon->dir == dirs::right || Balloon->dir == dirs::up || Balloon->dir == dirs::down)
 			{
-				if (Balloon->start.x >= scr_width / 2.0f)distance -= 0.2f;
-				else distance -= 0.1f;
+				if (Balloon->start.x >= scr_width / 2.0f)
+				{
+					distance -= 0.2f;
+					score += 20;
+				}
+				else
+				{
+					score += 10;
+					distance -= 0.1f;
+				}
 			}
 			if (Balloon->lifes + 5 <= 100)Balloon->lifes += 5;
 		}

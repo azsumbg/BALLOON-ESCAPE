@@ -622,6 +622,64 @@ void LoadGame()
 
 	MessageBox(bHwnd, L"Играта е заредена !", L"Зареждане !", MB_OK | MB_APPLMODAL | MB_ICONINFORMATION);
 }
+void ShowHelp()
+{
+	int result{ 0 };
+	CheckFile(help_file, &result);
+	if (result == FILE_NOT_EXIST)
+	{
+		if (sound)mciSendString(L"play .\\res\\snd\\negative.wav", NULL, NULL, NULL);
+		MessageBox(bHwnd, L"Няма помощна информация за играта !", L"Липсва файл",
+			MB_OK | MB_APPLMODAL | MB_ICONEXCLAMATION);
+		return;
+	}
+
+	std::wifstream help(help_file);
+	help >> result;
+
+	wchar_t help_txt[1000]{ L"\0" };
+
+	for (int i = 0; i < result; ++i)
+	{
+		int letter = 0;
+		help >> letter;
+		help_txt[i] = static_cast<wchar_t>(letter);
+	}
+
+	help.close();
+
+	if (midFormat && nrmFormat && txtBrush && hgltBrush && txtBrush && statBrush && b1BckgBrush && b2BckgBrush && b3BckgBrush)
+	{
+		Draw->BeginDraw();
+
+		Draw->Clear(D2D1::ColorF(D2D1::ColorF::DarkBlue));
+
+		Draw->FillRectangle(D2D1::RectF(0, 0, scr_width, 50.0f), statBrush);
+		Draw->FillRoundedRectangle(D2D1::RoundedRect(b1Rect, 10.0f, 20.0f), b1BckgBrush);
+		Draw->FillRoundedRectangle(D2D1::RoundedRect(b2Rect, 10.0f, 20.0f), b2BckgBrush);
+		Draw->FillRoundedRectangle(D2D1::RoundedRect(b3Rect, 10.0f, 20.0f), b3BckgBrush);
+
+		if (name_set)Draw->DrawTextW(L"ИМЕ НА ПИЛОТ", 13, nrmFormat, b1TxtRect, inactBrush);
+		else
+		{
+			if (!b1Hglt)Draw->DrawTextW(L"ИМЕ НА ПИЛОТ", 13, nrmFormat, b1TxtRect, txtBrush);
+			else Draw->DrawTextW(L"ИМЕ НА ПИЛОТ", 13, nrmFormat, b1TxtRect, hgltBrush);
+		}
+
+		if (!b2Hglt)Draw->DrawTextW(L"ЗВУЦИ ON / OFF", 15, nrmFormat, b2TxtRect, txtBrush);
+		else Draw->DrawTextW(L"ЗВУЦИ ON / OFF", 15, nrmFormat, b2TxtRect, hgltBrush);
+
+		if (!b3Hglt)Draw->DrawTextW(L"ПОМОЩ ЗА ИГРАТА", 16, nrmFormat, b3TxtRect, txtBrush);
+		else Draw->DrawTextW(L"ПОМОЩ ЗА ИГРАТА", 16, nrmFormat, b3TxtRect, hgltBrush);
+
+		Draw->DrawTextW(help_txt, result, midFormat, D2D1::RectF(100.0f, 100.0f, scr_width, scr_height), hgltBrush);
+
+		Draw->EndDraw();
+
+	}
+
+	if (sound)mciSendString(L"play .\\res\\snd\\help.wav", NULL, NULL, NULL);
+}
 
 INT_PTR CALLBACK DlgProc(HWND hwnd, UINT ReceivedMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -907,7 +965,24 @@ LRESULT CALLBACK WinProc(HWND hwnd, UINT ReceivedMsg, WPARAM wParam, LPARAM lPar
 					break;
 				}
 			}
+			if (LOWORD(lParam) * scale_x >= b3Rect.left && LOWORD(lParam) * scale_x <= b3Rect.right)
+			{
+				if (sound)mciSendString(L"play .\\res\\snd\\select.wav", NULL, NULL, NULL);
 
+				if (!show_help)
+				{
+					show_help = true;
+					pause = true;
+					ShowHelp();
+					break;
+				}
+				else
+				{
+					show_help = false;
+					pause = false;
+					break;
+				}
+			}
 		}
 		break;
 

@@ -506,9 +506,122 @@ void SaveGame()
 }
 void LoadGame()
 {
+	int result{ 0 };
+	CheckFile(save_file, &result);
 
+	if (result == FILE_NOT_EXIST)
+	{
+		if (sound)mciSendString(L"play .\\res\\snd\\negative.wav", NULL, NULL, NULL);
+		MessageBox(bHwnd, L"Все още няма записана игра !\n\nПостарай се повече !", L"Липсва файл",
+			MB_OK | MB_APPLMODAL | MB_ICONEXCLAMATION);
+		return;
+	}
+	else
+	{
+		if (sound)mciSendString(L"play .\\res\\snd\\exclamation.wav", NULL, NULL, NULL);
+		if (MessageBox(bHwnd, L"Ако продължиш, ще загубиш тази игра !\n\nНаистина ли зареждаш записаната игра ?",
+			L"Зареждане", MB_YESNO | MB_APPLMODAL | MB_ICONQUESTION) == IDNO)return;
+	}
+
+	if (!vFields.empty())
+		for (int i = 0; i < vFields.size(); ++i)FreeMem(&vFields[i]);
+	vFields.clear();
+	for (float x = -scr_width; x < 2 * scr_width; x += scr_width)
+		vFields.push_back(dll::FIELDS::create(static_cast<nature>(RandIt(3, 4)), x, 50.0f));
+
+	if (!vSkies.empty())
+		for (int i = 0; i < vSkies.size(); ++i)FreeMem(&vSkies[i]);
+	vSkies.clear();
+	vSkies.push_back(dll::FIELDS::create(nature::sun, scr_width - 100.0f, 60.0f));
+
+	if (!vBirds.empty())
+		for (int i = 0; i < vBirds.size(); ++i)FreeMem(&vBirds[i]);
+	vBirds.clear();
+
+	if (!vGorillas.empty())
+		for (int i = 0; i < vGorillas.size(); ++i)FreeMem(&vGorillas[i]);
+	vGorillas.clear();
+
+	if (!vBannanas.empty())
+		for (int i = 0; i < vBannanas.size(); ++i)FreeMem(&vBannanas[i]);
+	vBannanas.clear();
+
+	FreeMem(&Balloon);
+	Balloon = dll::BALLOON::create(10.0f, scr_height / 2.0f);
+
+	std::wifstream save(save_file);
+
+	save >> killed;
+	if (killed)GameOver();
+
+	save >> level;
+	save >> score;
+	save >> distance;
+	save >> level_skipped;
+
+	for (int i = 0; i < 16; ++i)
+	{
+		int letter = 0;
+
+		save >> letter;
+		current_player[i] = static_cast<wchar_t>(letter);
+	}
+	save >> name_set;
+
+	save >> Balloon->start.x;
+	save >> Balloon->start.y;
+
+	save >> result;
+	if (result > 0)
+	{
+		for (int i = 0; i < result; ++i)
+		{
+			float sx{ 0 };
+			float sy{ 0 };
+
+			save >> sx;
+			save >> sy;
+
+			vGorillas.push_back(dll::GORRILLA::create(evils::gorilla, sx, sy));
+		}
+	}
+
+	save >> result;
+	if (result > 0)
+	{
+		for (int i = 0; i < result; ++i)
+		{
+			float sx{ 0 };
+			float sy{ 0 };
+			int ttype{ -1 };
+
+			save >> ttype;
+			save >> sx;
+			save >> sy;
+
+			switch (ttype)
+			{
+			case 0:
+				vBirds.push_back(dll::BIRD1::create(evils::bird1, sx, sy));
+				break;
+
+			case 1:
+				vBirds.push_back(dll::BIRD2::create(evils::bird1, sx, sy));
+				break;
+
+			case 2:
+				vBirds.push_back(dll::BIRD3::create(evils::bird1, sx, sy));
+				break;
+			}
+		}
+	}
+
+	save.close();
+
+	if (sound)mciSendString(L"play .\\res\\snd\\save.wav", NULL, NULL, NULL);
+
+	MessageBox(bHwnd, L"Играта е заредена !", L"Зареждане !", MB_OK | MB_APPLMODAL | MB_ICONINFORMATION);
 }
-
 
 INT_PTR CALLBACK DlgProc(HWND hwnd, UINT ReceivedMsg, WPARAM wParam, LPARAM lParam)
 {
